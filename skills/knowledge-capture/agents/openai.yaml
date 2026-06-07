@@ -1,0 +1,4 @@
+interface:
+  display_name: "Knowledge Capture"
+  short_description: "Capture durable repo knowledge in knowledge.md"
+  default_prompt: "Use $knowledge-capture to save durable project knowledge from this conversation into knowledge.md."

@@ -10,9 +10,10 @@ main.py
 # Virtual environments
 .venv
 
-#data
+#Folders
 
 data/
+skills/
 
 #Markdownfiles
 

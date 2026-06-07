@@ -5,6 +5,7 @@ build/
 dist/
 wheels/
 *.egg-info
+main.py
 
 # Virtual environments
 .venv
@@ -12,3 +13,8 @@ wheels/
 #data
 
 data/
+
+#Markdownfiles
+
+*.md
+

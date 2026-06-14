@@ -6,6 +6,7 @@ dist/
 wheels/
 *.egg-info
 main.py
+.env
 
 # Virtual environments
 .venv
@@ -14,8 +15,8 @@ main.py
 
 data/
 skills/
+vectorstore/
 
 #Markdownfiles
 
 *.md
-

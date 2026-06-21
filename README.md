@@ -63,7 +63,7 @@ sequenceDiagram
 | OpenAI/Azure embedding selection | Implemented | `app/embeddings.py` |
 | Local Chroma persistence | Implemented | `app/vectorstore.py` |
 | Index-build CLI | Implemented | `scripts/build_index.py` |
-| Retriever and QA | Planned | `app/rag.py` |
+| Retriever and QA | Implemented | `app/rag.py` |
 | FastAPI server | Planned | `app/server.py` |
 | Agent and tools | Planned | `app/agent.py` |
 
@@ -103,6 +103,7 @@ Create a local `.env` file in the repository root. Never commit this file.
 EMBEDDINGS_PROVIDER=openai
 OPENAI_API_KEY=your-openai-api-key
 OPENAI_EMBEDDINGS_MODEL=text-embedding-3-small
+OPENAI_CHAT_MODEL=gpt-4.1-mini
 
 # Optional settings for compatible or customized endpoints:
 OPENAI_API_BASE=
@@ -122,6 +123,8 @@ AZURE_OPENAI_API_VERSION=your-supported-api-version
 AZURE_OPENAI_API_TYPE=azure
 AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT=your-deployment-name
 AZURE_OPENAI_EMBEDDINGS_MODEL=text-embedding-3-small
+AZURE_OPENAI_CHAT_DEPLOYMENT=your-chat-deployment-name
+AZURE_OPENAI_CHAT_MODEL=your-chat-model-name
 ```
 
 `AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT` is the deployment name created in Azure,
@@ -220,6 +223,23 @@ Use the same embedding model for indexing and future retrieval. Changing the
 embedding model requires rebuilding the entire index because vectors from
 different models are not directly comparable.
 
+## Query the Index
+
+Ask a source-grounded question from Python after building the index:
+
+```python
+from app.rag import answer_query
+
+result = answer_query("What active-learning strategies are discussed?")
+print(result.answer)
+for source in result.sources:
+    print(source.file_name, source.page)
+```
+
+Each query performs one query-embedding request and one chat-model request.
+The returned source numbers match the bracketed citations requested from the
+model.
+
 ## Project Structure
 
 ```text
@@ -227,6 +247,7 @@ azure-rag-agent/
 ├── app/
 │   ├── embeddings.py     # Provider selection and embedding helpers
 │   ├── ingest.py         # PDF loading, cleanup, and chunking
+│   ├── rag.py            # Retrieval and source-grounded question answering
 │   └── vectorstore.py    # Chroma initialization and document storage
 ├── data/
 │   └── docs/             # Local PDF corpus

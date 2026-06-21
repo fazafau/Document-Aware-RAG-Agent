@@ -26,7 +26,7 @@ from hashlib import sha1  # Build deterministic document identifiers.
 from pathlib import Path  # Work with persistence directories safely.
 
 from langchain_core.documents import Document  # Keep the vectorstore input type explicit.
-from langchain_community.vectorstores import Chroma  # Use Chroma as the local persistent store.
+from langchain_chroma import Chroma  # Use the maintained Chroma integration.
 
 from app.embeddings import EmbeddingClient  # Reuse the provider-agnostic embedding type.
 from app.embeddings import get_embeddings  # Build an embedding client when one is not supplied.
@@ -39,6 +39,7 @@ def init_chroma(
     persist_dir: str | Path = DEFAULT_PERSIST_DIR,
     collection_name: str = DEFAULT_COLLECTION_NAME,
     embeddings: EmbeddingClient | None = None,
+    create_collection_if_not_exists: bool = True,
 ) -> Chroma:
     """Open or create a persistent Chroma vectorstore.
 
@@ -53,6 +54,9 @@ def init_chroma(
         collection_name: Chroma collection to open or create.
         embeddings: Optional embedding client used to encode documents and
             queries. When omitted, environment configuration selects one.
+        create_collection_if_not_exists: Create the requested collection when
+            it is missing. Retrieval callers can disable this to fail instead
+            of silently opening a new empty collection.
 
     Returns:
         A LangChain ``Chroma`` wrapper connected to the requested persistent
@@ -78,6 +82,7 @@ def init_chroma(
         collection_name=collection_name,  # Keep the collection name explicit.
         embedding_function=embedding_client,  # Give Chroma the embedding implementation.
         persist_directory=str(persist_path),  # Store the index on disk for reuse.
+        create_collection_if_not_exists=create_collection_if_not_exists,  # Respect caller intent.
     )
 
 
@@ -139,8 +144,8 @@ def upsert_documents(
     The input sequence is materialized once so document counting, ID creation,
     and storage use the same stable order. Caller-provided IDs are accepted
     when they match the document count; otherwise deterministic IDs are
-    generated from each document. Chroma embeds and stores the documents, then
-    the collection is explicitly persisted to disk.
+    generated from each document. Chroma embeds, stores, and automatically
+    persists the documents to disk.
 
     Args:
         vectorstore: Initialized Chroma collection that will receive the
@@ -154,8 +159,7 @@ def upsert_documents(
     Raises:
         ValueError: If the number of supplied IDs differs from the number of
             documents.
-        Exception: Propagates embedding, Chroma storage, and persistence
-            failures.
+        Exception: Propagates embedding and Chroma storage failures.
 
     Side effects:
         Sends document text to the configured embedding service and writes the
@@ -168,8 +172,7 @@ def upsert_documents(
     if len(document_ids) != len(chunk_documents):  # Guard against mismatched inputs.
         raise ValueError("ids must match the number of documents")  # Fail loudly when the caller data is inconsistent.
 
-    stored_ids = vectorstore.add_documents(chunk_documents, ids=document_ids)  # Delegate storage to Chroma.
-    vectorstore.persist()  # Flush the updated collection to disk.
+    stored_ids = vectorstore.add_documents(chunk_documents, ids=document_ids)  # Store and persist through Chroma.
     return stored_ids  # Hand the inserted IDs back to the caller.
 
 
